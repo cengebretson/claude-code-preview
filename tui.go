@@ -72,6 +72,7 @@ var CatppuccinMocha = Theme{
 
 var defaultStyles styles
 var pollRate = 500 * time.Millisecond
+var paneWidth = 30
 
 var fileIcons = map[string]string{
 	".go":    "",
@@ -581,6 +582,7 @@ func runTUI() error {
 	cfg := loadConfig()
 	defaultStyles = newStyles(cfg.theme)
 	pollRate = cfg.pollRate
+	paneWidth = cfg.paneWidth
 
 	p := tea.NewProgram(
 		tuiModel{waiting: true},
@@ -588,5 +590,7 @@ func runTUI() error {
 		tea.WithMouseCellMotion(),
 	)
 	_, err := p.Run()
+	// Clear pane title so runTmux() doesn't detect a ghost pane after exit.
+	exec.Command("tmux", "select-pane", "-t", os.Getenv("TMUX_PANE"), "-T", "").Run()
 	return err
 }

@@ -66,7 +66,8 @@ Create `~/.config/claude-code-preview/config.json` to customize behavior. All fi
     "yellow":   "#f9e2af",
     "peach":    "#fab387"
   },
-  "poll_ms": 500
+  "poll_ms": 500,
+  "pane_width": 40
 }
 ```
 

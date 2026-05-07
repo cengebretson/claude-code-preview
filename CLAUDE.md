@@ -64,7 +64,8 @@ Everything lives in `~/.config/claude-code-preview/` (or `$XDG_CONFIG_HOME/claud
     "yellow":   "#f9e2af",
     "peach":    "#fab387"
   },
-  "poll_ms": 500
+  "poll_ms": 500,
+  "pane_width": 40
 }
 ```
 
@@ -117,9 +118,7 @@ Tests cover `mergeSettings`, `removeHooksFromSettings`, and `hookExists` in `ins
 - **Dismiss a file** — `d` to remove a file from the list without undoing it
 - **Total diff summary** — show aggregate `+N -N` across all files in the header
 - **tmux notification on new changes** — `tmux display-message` or visual bell when a signal arrives while the TUI is in waiting state, so you know to unzoom
-
-### Configuration
-- **Configurable pane split** — `30%` is hardcoded in `runTmux()`; expose as `pane_width` in `config.json`
+- **Auto-unzoom on signal** — when new changes arrive, check `#{window_zoomed_flag}` and call `tmux resize-pane -Z` to unzoom the window automatically; note that `-Z` is a window-level toggle so it should unzoom whichever pane is currently zoomed
 
 ### Git Integration
 - **Stage changes** — `a` to `git add` the current file directly from the TUI

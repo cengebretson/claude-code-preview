@@ -10,8 +10,9 @@ import (
 )
 
 type configFile struct {
-	Theme  configTheme `json:"theme"`
-	PollMs int         `json:"poll_ms"`
+	Theme     configTheme `json:"theme"`
+	PollMs    int         `json:"poll_ms"`
+	PaneWidth int         `json:"pane_width"`
 }
 
 type configTheme struct {
@@ -33,14 +34,16 @@ func appConfigDir() string {
 }
 
 type resolvedConfig struct {
-	theme    Theme
-	pollRate time.Duration
+	theme     Theme
+	pollRate  time.Duration
+	paneWidth int
 }
 
 func loadConfig() resolvedConfig {
 	cfg := resolvedConfig{
-		theme:    CatppuccinMocha,
-		pollRate: 500 * time.Millisecond,
+		theme:     CatppuccinMocha,
+		pollRate:  500 * time.Millisecond,
+		paneWidth: 40,
 	}
 
 	data, err := os.ReadFile(filepath.Join(appConfigDir(), "config.json"))
@@ -80,6 +83,9 @@ func loadConfig() resolvedConfig {
 
 	if f.PollMs > 0 {
 		cfg.pollRate = time.Duration(f.PollMs) * time.Millisecond
+	}
+	if f.PaneWidth > 0 {
+		cfg.paneWidth = f.PaneWidth
 	}
 
 	return cfg

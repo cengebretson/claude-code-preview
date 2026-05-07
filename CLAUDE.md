@@ -103,3 +103,24 @@ go test ./...
 ```
 
 Tests cover `mergeSettings`, `removeHooksFromSettings`, and `hookExists` in `install_test.go`.
+
+## Future Enhancements
+
+### Signal / Architecture
+- **Named pipe (FIFO) signal** — replace the polling + signal file approach with a FIFO at `/tmp/claude-preview-signal.fifo`. The TUI creates it on startup and blocks on a read goroutine; the hook writes to it for instant delivery with no polling overhead. Main tradeoff is complexity around FIFO lifecycle (create on start, recreate on error). Current file polling is fine for single-user local use.
+- **Multiple session support** — if two Claude sessions finish simultaneously the signal file gets clobbered; a queue or append-based approach would handle concurrent sessions cleanly
+- **`fsnotify` instead of polling** — watch the signal file path with `github.com/fsnotify/fsnotify` rather than ticking every 500ms; pairs well with the FIFO idea
+
+### UX
+- **Persistent side-by-side preference** — `s` toggle resets each session; save to `config.json` so it survives restarts
+- **Remember scroll position per file** — navigating away and back resets the diff viewport to top; store per-file offsets in the model
+- **Dismiss a file** — `d` to remove a file from the list without undoing it
+- **Total diff summary** — show aggregate `+N -N` across all files in the header
+- **tmux notification on new changes** — `tmux display-message` or visual bell when a signal arrives while the TUI is in waiting state, so you know to unzoom
+
+### Configuration
+- **Configurable pane split** — `30%` is hardcoded in `runTmux()`; expose as `pane_width` in `config.json`
+
+### Git Integration
+- **Stage changes** — `a` to `git add` the current file directly from the TUI
+- **Jump to hunk** — `n`/`p` to navigate between diff hunks within a file

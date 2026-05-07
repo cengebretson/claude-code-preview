@@ -11,7 +11,8 @@ case "$event" in
     snap_dir="/tmp/claude-snapshots-${session_id}"
     mkdir -p "$snap_dir"
     snap_name="${file_path//\//_}"
-    cp "$file_path" "$snap_dir/$snap_name"
+    # Only snapshot once per session — preserve the pre-edit original, not the state before the last edit.
+    [[ ! -f "$snap_dir/$snap_name" ]] && cp "$file_path" "$snap_dir/$snap_name"
     ;;
 
   PostToolUse)

@@ -114,19 +114,21 @@ func fileIcon(path string) string {
 }
 
 type tuiModel struct {
-	files      []string
-	fileStats  map[string][2]int // [added, removed] per file
-	sessionID  string
-	selected   int
-	listOffset int
-	waiting    bool
-	sideBySide bool
-	showHelp   bool
-	statusMsg  string
-	width      int
-	height     int
-	viewport   viewport.Model
-	ready      bool
+	files       []string
+	fileStats   map[string][2]int // [added, removed] per file
+	sessionID   string
+	gitRoot     string
+	selected    int
+	listOffset  int
+	waiting     bool
+	sideBySide  bool
+	showHelp    bool
+	popupEditor bool
+	statusMsg   string
+	width       int
+	height      int
+	viewport    viewport.Model
+	ready       bool
 }
 
 type tickMsg time.Time
@@ -233,6 +235,14 @@ func snapshotPath(file, sessionID string) string {
 	return fmt.Sprintf("/tmp/claude-snapshots-%s/%s", sessionID, snapName)
 }
 
+func findGitRoot(path string) string {
+	out, err := exec.Command("git", "-C", filepath.Dir(path), "rev-parse", "--show-toplevel").Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
 func preferredEditor() string {
 	if v := os.Getenv("VISUAL"); v != "" {
 		return v
@@ -317,6 +327,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.files = msg.files
 			m.fileStats = make(map[string][2]int)
 			m.sessionID = msg.sessionID
+			m.gitRoot = findGitRoot(msg.files[0])
 			m.selected = 0
 			m.listOffset = 0
 			m.waiting = false
@@ -400,6 +411,13 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !m.waiting && len(m.files) > 0 {
 				file := m.files[m.selected]
 				sessionID := m.sessionID
+				if m.popupEditor {
+					editor := preferredEditor()
+					return m, func() tea.Msg {
+						exec.Command("tmux", "display-popup", "-E", "-w", "90%", "-h", "90%", editor, file).Run()
+						return nvimDoneMsg{file: file, sessionID: sessionID}
+					}
+				}
 				c := exec.Command(preferredEditor(), file)
 				return m, tea.ExecProcess(c, func(err error) tea.Msg {
 					return nvimDoneMsg{file: file, sessionID: sessionID}
@@ -509,7 +527,14 @@ func (m tuiModel) View() string {
 	lines := []string{defaultStyles.header.Render("󱙺 changed files")}
 	for i := m.listOffset; i < end; i++ {
 		f := m.files[i]
-		display := strings.Replace(f, os.Getenv("HOME"), "~", 1)
+		display := f
+		if m.gitRoot != "" {
+			if rel, err := filepath.Rel(m.gitRoot, f); err == nil {
+				display = rel
+			}
+		} else {
+			display = strings.Replace(f, os.Getenv("HOME"), "~", 1)
+		}
 		icon := fileIcon(f)
 
 		statsStr := ""
@@ -585,7 +610,7 @@ func runTUI() error {
 	paneWidth = cfg.paneWidth
 
 	p := tea.NewProgram(
-		tuiModel{waiting: true},
+		tuiModel{waiting: true, popupEditor: cfg.popupEditor},
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
 	)

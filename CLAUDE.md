@@ -65,7 +65,8 @@ Everything lives in `~/.config/claude-code-preview/` (or `$XDG_CONFIG_HOME/claud
     "peach":    "#fab387"
   },
   "poll_ms": 500,
-  "pane_width": 40
+  "pane_width": 40,
+  "popup_editor": true
 }
 ```
 

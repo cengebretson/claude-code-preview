@@ -1,19 +1,6 @@
 # claude-code-preview
 
-A TUI diff review pane for [Claude Code](https://claude.ai/code). When Claude edits files, a tmux side pane shows the changed files alongside a syntax-highlighted delta diff. Navigate files with arrow keys, open in your editor, or undo Claude's edits directly from the pane.
-
-## Features
-
-- File list with `+/-` change counts and file type icons
-- Scrollable delta diff preview
-- Mouse click to select files, scroll wheel to navigate diff
-- `u` to restore a file to its pre-edit state
-- `U` to restore all edited files
-- `s` to toggle side-by-side diff
-- `y` to copy file path to clipboard
-- Polls for new changes automatically — stays live across multiple Claude responses
-- Opens files in `$VISUAL` / `$EDITOR` (default: nvim)
-- Themeable via `~/.config/claude-code-preview/config.json`
+A TUI diff review pane for [Claude Code](https://claude.ai/code). When Claude edits files, a tmux side pane shows the changed files with syntax-highlighted diffs. Navigate files, open them in your editor, or undo Claude's edits without leaving the terminal.
 
 ## Requirements
 
@@ -30,6 +17,17 @@ claude-code-preview install
 
 Then add the tmux binding printed by `install` to your `tmux.conf` and reload.
 
+## Workflow
+
+1. Start a Claude Code session in tmux as normal
+2. Press `prefix+P` to open the preview pane alongside your Claude session
+3. Use `prefix+z` to zoom Claude full screen while it works
+4. When Claude finishes editing, unzoom (`prefix+z` again) — the preview pane will show the changed files and diffs
+5. Navigate with `↑`/`↓`, review diffs, hit `u` to undo a file or `enter` to open it in your editor
+6. Press `q` to clear the file list and return to the waiting state
+
+The pane stays open and updates automatically across multiple Claude responses — no need to reopen it.
+
 ## Usage
 
 | Key | Action |
@@ -45,11 +43,7 @@ Then add the tmux binding printed by `install` to your `tmux.conf` and reload.
 | `q` | Clear / quit |
 | `?` | Show keybindings |
 
-Mouse click selects a file; scroll wheel moves the diff pane.
-
-## Editor
-
-The file opener respects `$VISUAL` first, then `$EDITOR`, then falls back to `nvim`. Set either variable in your shell config to use a different editor.
+Mouse click selects a file; scroll wheel moves the diff pane. `enter` opens the file in `$VISUAL`, `$EDITOR`, or `nvim` as a fallback.
 
 ## Configuration
 
@@ -71,11 +65,11 @@ Create `~/.config/claude-code-preview/config.json` to customize behavior. All fi
 }
 ```
 
-`poll_ms` controls how often the TUI checks for new changes from Claude (default: 500ms).
+`poll_ms` controls how often the TUI checks for new changes from Claude (default: 500ms). `pane_width` sets the width of the preview pane as a percentage of the terminal width (default: 40). Set `popup_editor` to `false` to open files directly in the preview pane instead of a tmux popup (default: `true`).
 
 ## Diff Rendering
 
-Diffs are rendered by [delta](https://github.com/dandavison/delta) using `--file-style omit --hunk-header-style omit` to strip file headers and hunk markers, showing only changed lines. Delta reads your `~/.gitconfig` theme automatically. Delta reads your existing `~/.gitconfig` theme automatically, so colors match your current setup.
+Diffs are rendered by [delta](https://github.com/dandavison/delta) using `--file-style omit --hunk-header-style omit` to strip file headers and hunk markers, showing only changed lines. Delta reads your existing `~/.gitconfig` theme automatically, so colors match your current setup.
 
 ## How It Works
 
@@ -85,13 +79,15 @@ Diffs are rendered by [delta](https://github.com/dandavison/delta) using `--file
 2. **PostToolUse** — records edited file paths
 3. **Stop** — signals the TUI with the list of changed files
 
-Open the side pane with your tmux binding (`prefix+P` by default). Use `prefix+z` to zoom your main Claude pane full screen and unzoom to review changes.
+The TUI diffs the snapshot against the current file, so multiple edits to the same file in one response show as a single net diff.
 
 ## Commands
 
 ```bash
 claude-code-preview            # launch TUI
 claude-code-preview install    # install hooks and scripts
-claude-code-preview status     # check dependencies and installation
+claude-code-preview status     # check dependencies and installation health
 claude-code-preview uninstall  # remove hooks and scripts
 ```
+
+Run `claude-code-preview status` if the pane isn't updating — it checks that `delta`, `jq`, and the hook scripts are all installed and wired up correctly.

@@ -34,15 +34,10 @@ func claudeConfigDir() string {
 	return filepath.Join(home, ".claude")
 }
 
-func installDir() string {
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".local", "share", "claude-code-preview")
-}
-
 func runInstall() error {
 	configDir := claudeConfigDir()
 	hookDir := filepath.Join(configDir, "hooks")
-	outDir := installDir()
+	outDir := appConfigDir()
 
 	fmt.Println("Installing claude-code-preview...")
 

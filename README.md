@@ -51,9 +51,9 @@ Mouse click selects a file; scroll wheel moves the diff pane.
 
 The file opener respects `$VISUAL` first, then `$EDITOR`, then falls back to `nvim`. Set either variable in your shell config to use a different editor.
 
-## Theming
+## Configuration
 
-Create `~/.config/claude-code-preview/config.json` to override colors. Any omitted fields fall back to the Catppuccin Mocha defaults.
+Create `~/.config/claude-code-preview/config.json` to customize behavior. All fields are optional and fall back to defaults.
 
 ```json
 {
@@ -65,13 +65,16 @@ Create `~/.config/claude-code-preview/config.json` to override colors. Any omitt
     "surface0": "#313244",
     "yellow":   "#f9e2af",
     "peach":    "#fab387"
-  }
+  },
+  "poll_ms": 500
 }
 ```
 
+`poll_ms` controls how often the TUI checks for new changes from Claude (default: 500ms).
+
 ## Diff Rendering
 
-Diffs are rendered by [delta](https://github.com/dandavison/delta) using `--file-style omit --hunk-header-style omit` to show only changed code without file headers or hunk markers. Delta reads your existing `~/.gitconfig` theme automatically, so colors match your current setup.
+Diffs are rendered by [delta](https://github.com/dandavison/delta) using `--file-style omit --hunk-header-style omit` to strip file headers and hunk markers, showing only changed lines. Delta reads your `~/.gitconfig` theme automatically. Delta reads your existing `~/.gitconfig` theme automatically, so colors match your current setup.
 
 ## How It Works
 

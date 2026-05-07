@@ -27,7 +27,7 @@ func checkBin(name string) {
 func runStatus() {
 	configDir := claudeConfigDir()
 	hookDir := filepath.Join(configDir, "hooks")
-	outDir := installDir()
+	outDir := appConfigDir()
 
 	fmt.Println("Dependencies:")
 	checkBin("delta")

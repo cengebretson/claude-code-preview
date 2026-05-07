@@ -21,58 +21,87 @@ const (
 	paneTitle  = "claude-preview"
 )
 
-// Catppuccin Mocha
-var (
-	clGreen    = lipgloss.Color("#a6e3a1")
-	clRed      = lipgloss.Color("#f38ba8")
-	clMauve    = lipgloss.Color("#cba6f7")
-	clOverlay1 = lipgloss.Color("#7f849c")
-	clSurface0 = lipgloss.Color("#313244")
-	clYellow   = lipgloss.Color("#f9e2af")
-	clPeach    = lipgloss.Color("#fab387")
-)
+type Theme struct {
+	Green    lipgloss.Color
+	Red      lipgloss.Color
+	Mauve    lipgloss.Color
+	Overlay1 lipgloss.Color
+	Surface0 lipgloss.Color
+	Yellow   lipgloss.Color
+	Peach    lipgloss.Color
+}
 
-var (
-	headerStyle   = lipgloss.NewStyle().Foreground(clMauve)
-	selectedStyle = lipgloss.NewStyle().Foreground(clGreen).Background(clSurface0)
-	dimStyle      = lipgloss.NewStyle().Foreground(clOverlay1)
-	sepStyle      = lipgloss.NewStyle().Foreground(clOverlay1)
-	waitStyle     = lipgloss.NewStyle().Foreground(clOverlay1).Padding(1, 2)
-	addStyle      = lipgloss.NewStyle().Foreground(clGreen)
-	delStyle      = lipgloss.NewStyle().Foreground(clRed)
-	statusStyle   = lipgloss.NewStyle().Foreground(clYellow)
-	undoStyle     = lipgloss.NewStyle().Foreground(clPeach)
-)
+type styles struct {
+	header   lipgloss.Style
+	selected lipgloss.Style
+	dim      lipgloss.Style
+	sep      lipgloss.Style
+	wait     lipgloss.Style
+	add      lipgloss.Style
+	del      lipgloss.Style
+	status   lipgloss.Style
+	undo     lipgloss.Style
+	helpKey  lipgloss.Style
+}
+
+func newStyles(t Theme) styles {
+	return styles{
+		header:   lipgloss.NewStyle().Foreground(t.Mauve),
+		selected: lipgloss.NewStyle().Foreground(t.Green).Background(t.Surface0),
+		dim:      lipgloss.NewStyle().Foreground(t.Overlay1),
+		sep:      lipgloss.NewStyle().Foreground(t.Overlay1),
+		wait:     lipgloss.NewStyle().Foreground(t.Overlay1).Padding(1, 2),
+		add:      lipgloss.NewStyle().Foreground(t.Green),
+		del:      lipgloss.NewStyle().Foreground(t.Red),
+		status:   lipgloss.NewStyle().Foreground(t.Yellow),
+		undo:     lipgloss.NewStyle().Foreground(t.Peach),
+		helpKey:  lipgloss.NewStyle().Foreground(t.Mauve).Width(20),
+	}
+}
+
+// Catppuccin Mocha
+var CatppuccinMocha = Theme{
+	Green:    "#a6e3a1",
+	Red:      "#f38ba8",
+	Mauve:    "#cba6f7",
+	Overlay1: "#7f849c",
+	Surface0: "#313244",
+	Yellow:   "#f9e2af",
+	Peach:    "#fab387",
+}
+
+var defaultStyles styles
+var pollRate = 500 * time.Millisecond
 
 var fileIcons = map[string]string{
-	".go":    "",
-	".js":    "",
-	".ts":    "",
-	".tsx":   "",
-	".jsx":   "",
-	".py":    "",
-	".rs":    "",
-	".sh":    "",
-	".bash":  "",
-	".fish":  "",
-	".zsh":   "",
-	".md":    "",
-	".json":  "",
-	".yaml":  "",
-	".yml":   "",
-	".toml":  "",
-	".css":   "",
-	".scss":  "",
-	".html":  "",
-	".lua":   "",
-	".vim":   "",
-	".rb":    "",
-	".java":  "",
-	".swift": "",
-	".c":     "",
-	".cpp":   "",
-	".cs":    "",
-	".sql":   "",
+	".go":    "",
+	".js":    "",
+	".ts":    "",
+	".tsx":   "",
+	".jsx":   "",
+	".py":    "",
+	".rs":    "",
+	".sh":    "",
+	".bash":  "",
+	".fish":  "",
+	".zsh":   "",
+	".md":    "",
+	".json":  "",
+	".yaml":  "",
+	".yml":   "",
+	".toml":  "",
+	".css":   "",
+	".scss":  "",
+	".html":  "",
+	".lua":   "",
+	".vim":   "",
+	".rb":    "",
+	".java":  "",
+	".swift": "",
+	".c":     "",
+	".cpp":   "",
+	".cs":    "",
+	".sql":   "",
 }
 
 func fileIcon(path string) string {
@@ -116,7 +145,7 @@ type nvimDoneMsg struct {
 }
 
 func tickCmd() tea.Cmd {
-	return tea.Tick(500*time.Millisecond, func(t time.Time) tea.Msg {
+	return tea.Tick(pollRate, func(t time.Time) tea.Msg {
 		return tickMsg(t)
 	})
 }
@@ -151,7 +180,7 @@ func loadDiffCmd(file, sessionID string, sideBySide bool) tea.Cmd {
 		snapName := strings.ReplaceAll(file, "/", "_")
 		snapshot := fmt.Sprintf("/tmp/claude-snapshots-%s/%s", sessionID, snapName)
 
-		flags := "--file-style omit --hunk-header-style omit --color-always"
+		flags := "--file-style omit --hunk-header-style omit"
 		if sideBySide {
 			flags += " --side-by-side"
 		}
@@ -159,12 +188,12 @@ func loadDiffCmd(file, sessionID string, sideBySide bool) tea.Cmd {
 		var cmd *exec.Cmd
 		if _, err := os.Stat(snapshot); err == nil {
 			cmd = exec.Command("sh", "-c", fmt.Sprintf(
-				"git diff --color=always --no-index %q %q 2>/dev/null | delta %s",
+				"git diff --no-index %q %q 2>/dev/null | delta %s",
 				snapshot, file, flags,
 			))
 		} else {
 			cmd = exec.Command("sh", "-c", fmt.Sprintf(
-				"git diff --color=always HEAD -- %q | delta %s",
+				"git diff HEAD -- %q | delta %s",
 				file, flags,
 			))
 		}
@@ -201,6 +230,16 @@ func loadStatsCmd(file, sessionID string) tea.Cmd {
 func snapshotPath(file, sessionID string) string {
 	snapName := strings.ReplaceAll(file, "/", "_")
 	return fmt.Sprintf("/tmp/claude-snapshots-%s/%s", sessionID, snapName)
+}
+
+func preferredEditor() string {
+	if v := os.Getenv("VISUAL"); v != "" {
+		return v
+	}
+	if v := os.Getenv("EDITOR"); v != "" {
+		return v
+	}
+	return "nvim"
 }
 
 func undoFile(file, sessionID string) error {
@@ -360,7 +399,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !m.waiting && len(m.files) > 0 {
 				file := m.files[m.selected]
 				sessionID := m.sessionID
-				c := exec.Command("nvim", file)
+				c := exec.Command(preferredEditor(), file)
 				return m, tea.ExecProcess(c, func(err error) tea.Msg {
 					return nvimDoneMsg{file: file, sessionID: sessionID}
 				})
@@ -456,7 +495,7 @@ func (m tuiModel) View() string {
 	}
 
 	if m.waiting {
-		return waitStyle.Render("󱙺  waiting for claude changes...")
+		return defaultStyles.wait.Render("󱙺  waiting for claude changes...")
 	}
 
 	// File list
@@ -466,7 +505,7 @@ func (m tuiModel) View() string {
 		end = len(m.files)
 	}
 
-	lines := []string{headerStyle.Render("󱙺 changed files")}
+	lines := []string{defaultStyles.header.Render("󱙺 changed files")}
 	for i := m.listOffset; i < end; i++ {
 		f := m.files[i]
 		display := strings.Replace(f, os.Getenv("HOME"), "~", 1)
@@ -474,30 +513,30 @@ func (m tuiModel) View() string {
 
 		statsStr := ""
 		if stats, ok := m.fileStats[f]; ok {
-			a := addStyle.Render(fmt.Sprintf("+%d", stats[0]))
-			d := delStyle.Render(fmt.Sprintf("-%d", stats[1]))
+			a := defaultStyles.add.Render(fmt.Sprintf("+%d", stats[0]))
+			d := defaultStyles.del.Render(fmt.Sprintf("-%d", stats[1]))
 			statsStr = " " + a + " " + d
 		}
 
 		if i == m.selected {
-			lines = append(lines, selectedStyle.Render(fmt.Sprintf("  ▶ %s%s", icon, display))+statsStr)
+			lines = append(lines, defaultStyles.selected.Render(fmt.Sprintf("  ▶ %s%s", icon, display))+statsStr)
 		} else {
-			lines = append(lines, dimStyle.Render(fmt.Sprintf("    %s%s", icon, display))+statsStr)
+			lines = append(lines, defaultStyles.dim.Render(fmt.Sprintf("    %s%s", icon, display))+statsStr)
 		}
 	}
 
-	hint := "  ↑↓ · enter: nvim · r: refresh · q: clear · ?: help"
+	hint := "  ↑↓ · enter: open · q: clear · ?: help"
 	if m.statusMsg != "" {
-		hint = "  " + statusStyle.Render(m.statusMsg)
+		hint = "  " + defaultStyles.status.Render(m.statusMsg)
 	}
-	lines = append(lines, dimStyle.Render(hint))
+	lines = append(lines, defaultStyles.dim.Render(hint))
 
 	listView := lipgloss.NewStyle().
 		Height(m.listAreaHeight()).
 		Width(m.width).
 		Render(strings.Join(lines, "\n"))
 
-	sep := sepStyle.Render(strings.Repeat("─", m.width))
+	sep := defaultStyles.sep.Render(strings.Repeat("─", m.width))
 
 	return lipgloss.JoinVertical(lipgloss.Left, listView, sep, m.viewport.View())
 }
@@ -506,7 +545,7 @@ func (m tuiModel) helpView() string {
 	bindings := [][]string{
 		{"↑ / k", "previous file"},
 		{"↓ / j", "next file"},
-		{"enter", "open in nvim"},
+		{"enter", "open in $VISUAL / $EDITOR (default: nvim)"},
 		{"u", "undo current file (restore snapshot)"},
 		{"U", "undo all files"},
 		{"s", "toggle side-by-side diff"},
@@ -518,12 +557,12 @@ func (m tuiModel) helpView() string {
 	}
 
 	var sb strings.Builder
-	sb.WriteString(headerStyle.Render("󱙺 keybindings") + "\n\n")
+	sb.WriteString(defaultStyles.header.Render("󱙺 keybindings") + "\n\n")
 	for _, b := range bindings {
-		key := lipgloss.NewStyle().Foreground(clMauve).Width(20).Render(b[0])
-		sb.WriteString(fmt.Sprintf("  %s %s\n", key, dimStyle.Render(b[1])))
+		key := defaultStyles.helpKey.Render(b[0])
+		sb.WriteString(fmt.Sprintf("  %s %s\n", key, defaultStyles.dim.Render(b[1])))
 	}
-	sb.WriteString("\n" + dimStyle.Render("  press any key to close"))
+	sb.WriteString("\n" + defaultStyles.dim.Render("  press any key to close"))
 	return sb.String()
 }
 
@@ -538,6 +577,10 @@ func runTUI() error {
 		return fmt.Errorf("missing required dependencies: %s\nInstall with: brew install %s",
 			strings.Join(missing, ", "), strings.Join(missing, " "))
 	}
+
+	cfg := loadConfig()
+	defaultStyles = newStyles(cfg.theme)
+	pollRate = cfg.pollRate
 
 	p := tea.NewProgram(
 		tuiModel{waiting: true},

@@ -10,7 +10,7 @@ import (
 func runUninstall() error {
 	configDir := claudeConfigDir()
 	hookDir := filepath.Join(configDir, "hooks")
-	outDir := installDir()
+	outDir := appConfigDir()
 
 	fmt.Println("Uninstalling claude-code-preview...")
 
@@ -22,9 +22,10 @@ func runUninstall() error {
 		}
 	}
 
-	// Remove install dir
-	if err := os.RemoveAll(outDir); err == nil {
-		fmt.Printf("  ✓ removed %s\n", outDir)
+	// Remove preview-open.sh (leave config.json intact)
+	openScript := filepath.Join(outDir, "preview-open.sh")
+	if err := os.Remove(openScript); err == nil {
+		fmt.Printf("  ✓ removed %s\n", openScript)
 	}
 
 	// Remove hooks from settings.json

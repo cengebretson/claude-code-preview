@@ -13,7 +13,8 @@ Single binary with two modes:
 ## Key Files
 
 - `main.go` — entry point, subcommand routing
-- `tui.go` — bubbletea TUI model, view, and commands
+- `tui.go` — bubbletea TUI model, view, update, and commands
+- `config.go` — config file loading, `loadTheme()`, `appConfigDir()`
 - `install.go` — installs hook scripts and merges Claude Code `settings.json`
 - `status.go` — dependency and installation health check
 - `uninstall.go` — removes hooks from `settings.json` and deletes scripts
@@ -27,7 +28,47 @@ Snapshots of pre-edit files live at `/tmp/claude-snapshots-{sessionID}/{escaped_
 
 ## Diff Rendering
 
-Diffs are rendered by piping `git diff` through `delta` with `--file-style omit --hunk-header-style omit --color-always`. This strips file headers and hunk markers, showing only changed code. Delta picks up the user's `~/.gitconfig` theme automatically (Catppuccin Mocha). The `--side-by-side` flag is toggled at runtime via the `s` key.
+Diffs are rendered by piping `git diff` through `delta` with `--file-style omit --hunk-header-style omit`. This strips file headers and hunk markers, showing only changed code. Delta picks up the user's `~/.gitconfig` theme automatically. The `--side-by-side` flag is toggled at runtime via the `s` key.
+
+## Theme System
+
+Colors are defined in a `Theme` struct in `tui.go`. The default is `CatppuccinMocha`. At startup, `runTUI()` calls `loadTheme()` (in `config.go`) which reads `~/.config/claude-code-preview/config.json` if it exists. Missing fields fall back to `CatppuccinMocha` — partial overrides are supported.
+
+`newStyles(t Theme)` builds a `styles` struct of lipgloss styles from the theme. `defaultStyles` is a package-level var set in `runTUI()` before the program starts.
+
+To add a new built-in theme: define a new `var` of type `Theme` alongside `CatppuccinMocha` in `tui.go`.
+
+## Editor
+
+`preferredEditor()` checks `$VISUAL`, then `$EDITOR`, then falls back to `nvim`. Used when the user hits `enter` on a file.
+
+## Config Directory
+
+Everything lives in `~/.config/claude-code-preview/` (or `$XDG_CONFIG_HOME/claude-code-preview/`):
+
+- `config.json` — theme colors and poll interval (user-created, optional)
+- `preview-open.sh` — written by `install`, referenced in `tmux.conf`
+
+`installDir()` is gone — `appConfigDir()` is used everywhere.
+
+## Config File
+
+```json
+{
+  "theme": {
+    "green":    "#a6e3a1",
+    "red":      "#f38ba8",
+    "mauve":    "#cba6f7",
+    "overlay1": "#7f849c",
+    "surface0": "#313244",
+    "yellow":   "#f9e2af",
+    "peach":    "#fab387"
+  },
+  "poll_ms": 500
+}
+```
+
+All fields are optional — missing fields fall back to defaults. `poll_ms` controls how often the TUI checks for new Claude changes (default 500ms).
 
 ## Dependencies
 
@@ -35,12 +76,30 @@ Diffs are rendered by piping `git diff` through `delta` with `--file-style omit 
 - `jq` — JSON parsing in hook scripts
 - `tmux` — pane detection and title setting
 
+## Catppuccin Mocha Colors
+
+All default colors use the Catppuccin Mocha palette. Do not introduce colors outside this palette unless adding a new theme.
+
+| Role     | Hex       |
+|----------|-----------|
+| green    | `#a6e3a1` |
+| red      | `#f38ba8` |
+| mauve    | `#cba6f7` |
+| overlay1 | `#7f849c` |
+| surface0 | `#313244` |
+| yellow   | `#f9e2af` |
+| peach    | `#fab387` |
+
 ## Building
 
 ```bash
 go build -o claude-code-preview .
 ```
 
-## Catppuccin Mocha Colors
+## Testing
 
-All colors use the Catppuccin Mocha palette to match the user's terminal theme (tmux, starship, delta). Do not introduce colors outside this palette.
+```bash
+go test ./...
+```
+
+Tests cover `mergeSettings`, `removeHooksFromSettings`, and `hookExists` in `install_test.go`.

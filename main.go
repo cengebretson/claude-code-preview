@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+var version = "dev"
+
 func main() {
 	if len(os.Args) < 2 {
 		if err := runTUI(); err != nil {
@@ -27,9 +29,11 @@ func main() {
 		}
 	case "status":
 		runStatus()
+	case "version", "--version", "-v":
+		fmt.Println(version)
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
-		fmt.Fprintln(os.Stderr, "usage: claude-code-preview [install|uninstall|status]")
+		fmt.Fprintln(os.Stderr, "usage: claude-code-preview [install|uninstall|status|version]")
 		os.Exit(1)
 	}
 }

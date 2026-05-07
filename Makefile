@@ -2,10 +2,10 @@ BINARY := claude-code-preview
 DEMO_DIR := /tmp/claude-preview-demo
 SNAP_DIR := /tmp/claude-snapshots-demo
 
-.PHONY: build test install clean fmt preview clean-preview debug-preview
+.PHONY: build test install clean fmt preview clean-preview debug-preview release
 
 build:
-	go build -o $(BINARY) .
+	go build -ldflags "-X main.version=$$(git describe --tags --always --dirty 2>/dev/null || echo dev)" -o $(BINARY) .
 
 test:
 	go test ./...
@@ -15,6 +15,11 @@ install:
 
 clean:
 	rm -f $(BINARY)
+
+release:
+	@read -p "Tag version (e.g. v0.1.0): " tag && \
+	git tag $$tag && \
+	git push origin $$tag
 
 fmt:
 	go fmt ./...

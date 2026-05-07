@@ -37,7 +37,6 @@ func claudeConfigDir() string {
 func runInstall() error {
 	configDir := claudeConfigDir()
 	hookDir := filepath.Join(configDir, "hooks")
-	outDir := appConfigDir()
 
 	fmt.Println("Installing claude-code-preview...")
 

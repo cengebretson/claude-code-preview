@@ -10,8 +10,8 @@ build:
 test:
 	go test ./...
 
-install:
-	go install .
+install: build
+	cp $(BINARY) ~/.local/bin/$(BINARY)
 
 clean:
 	rm -f $(BINARY)

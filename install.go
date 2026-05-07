@@ -61,7 +61,7 @@ func runInstall() error {
 	fmt.Println("  ✓ updated settings.json")
 
 	fmt.Println("\nAdd this to your tmux.conf:")
-	fmt.Println("\n  bind P run-shell \"claude-code-preview tmux\"")
+	fmt.Println("\n  bind P run-shell \"~/.local/bin/claude-code-preview tmux\"")
 	fmt.Println("\nThen reload tmux: prefix+r")
 
 	return nil

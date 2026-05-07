@@ -1,16 +1,19 @@
 # claude-code-preview
 
-A TUI diff review pane for [Claude Code](https://claude.ai/code). When Claude edits files, a tmux side pane shows the changed files alongside a syntax-highlighted delta diff. Navigate files with arrow keys, open in nvim, or undo Claude's edits directly from the pane.
+A TUI diff review pane for [Claude Code](https://claude.ai/code). When Claude edits files, a tmux side pane shows the changed files alongside a syntax-highlighted delta diff. Navigate files with arrow keys, open in your editor, or undo Claude's edits directly from the pane.
 
 ## Features
 
 - File list with `+/-` change counts and file type icons
 - Scrollable delta diff preview
+- Mouse click to select files, scroll wheel to navigate diff
 - `u` to restore a file to its pre-edit state
 - `U` to restore all edited files
 - `s` to toggle side-by-side diff
 - `y` to copy file path to clipboard
 - Polls for new changes automatically — stays live across multiple Claude responses
+- Opens files in `$VISUAL` / `$EDITOR` (default: nvim)
+- Themeable via `~/.config/claude-code-preview/config.json`
 
 ## Requirements
 
@@ -33,13 +36,38 @@ Then add the tmux binding printed by `install` to your `tmux.conf` and reload.
 |-----|--------|
 | `↑` / `k` | Previous file |
 | `↓` / `j` | Next file |
-| `enter` | Open in nvim |
+| `enter` | Open in `$VISUAL` / `$EDITOR` |
 | `u` | Restore current file from snapshot |
 | `U` | Restore all files from snapshots |
 | `s` | Toggle side-by-side diff |
 | `y` | Copy file path to clipboard |
+| `r` | Refresh diff for current file |
 | `q` | Clear / quit |
 | `?` | Show keybindings |
+
+Mouse click selects a file; scroll wheel moves the diff pane.
+
+## Editor
+
+The file opener respects `$VISUAL` first, then `$EDITOR`, then falls back to `nvim`. Set either variable in your shell config to use a different editor.
+
+## Theming
+
+Create `~/.config/claude-code-preview/config.json` to override colors. Any omitted fields fall back to the Catppuccin Mocha defaults.
+
+```json
+{
+  "theme": {
+    "green":    "#a6e3a1",
+    "red":      "#f38ba8",
+    "mauve":    "#cba6f7",
+    "overlay1": "#7f849c",
+    "surface0": "#313244",
+    "yellow":   "#f9e2af",
+    "peach":    "#fab387"
+  }
+}
+```
 
 ## Diff Rendering
 

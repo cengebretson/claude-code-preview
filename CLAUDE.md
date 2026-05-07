@@ -14,7 +14,7 @@ Single binary with two modes:
 
 - `main.go` — entry point, subcommand routing
 - `tui.go` — bubbletea TUI model, view, update, and commands
-- `config.go` — config file loading, `loadTheme()`, `appConfigDir()`
+- `config.go` — config file loading, `loadConfig()`, `appConfigDir()`
 - `install.go` — installs hook scripts and merges Claude Code `settings.json`
 - `status.go` — dependency and installation health check
 - `uninstall.go` — removes hooks from `settings.json` and deletes scripts
@@ -22,9 +22,9 @@ Single binary with two modes:
 
 ## Signal Mechanism
 
-The TUI polls `/tmp/claude-preview-signal` every 500ms. The `diff-popup.sh` Stop hook writes changed file paths to this file when it detects the `claude-preview` tmux pane title. Session ID is written to `/tmp/claude-preview-signal.session`.
+The TUI polls `/tmp/claude-preview-signal` every 500ms. The `claude-code-preview.sh` Stop hook writes changed file paths to this file when it detects the `claude-preview` tmux pane title. Session ID is written to `/tmp/claude-preview-signal.session`.
 
-Snapshots of pre-edit files live at `/tmp/claude-snapshots-{sessionID}/{escaped_path}` — written by `snapshot-file.sh` before each Edit/Write.
+Snapshots of pre-edit files live at `/tmp/claude-snapshots-{sessionID}/{escaped_path}` — written by the PreToolUse branch of `claude-code-preview.sh` before the first Edit/Write per file per session. Subsequent edits to the same file do not overwrite the snapshot, so the diff always shows the full net change.
 
 ## Diff Rendering
 

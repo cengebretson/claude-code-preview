@@ -2,6 +2,17 @@
 
 A TUI diff review pane for [Claude Code](https://claude.ai/code). When Claude edits files, a tmux side pane shows the changed files with syntax-highlighted diffs. Navigate files, open them in your editor, or undo Claude's edits without leaving the terminal.
 
+## Features
+
+- File list with `+/-` change counts and file type icons
+- Paths shown relative to the git project root
+- Scrollable delta diff preview with mouse support
+- Multiple edits to the same file show as a single net diff
+- `u` / `U` to restore one or all files to their pre-edit state
+- Opens files in a tmux popup (`$VISUAL` / `$EDITOR` / nvim)
+- Side-by-side diff toggle, clipboard copy, per-file refresh
+- Themeable via `~/.config/claude-code-preview/config.json`
+
 ## Requirements
 
 - [tmux](https://github.com/tmux/tmux)
@@ -43,7 +54,7 @@ The pane stays open and updates automatically across multiple Claude responses â
 | `q` | Clear / quit |
 | `?` | Show keybindings |
 
-Mouse click selects a file; scroll wheel moves the diff pane. `enter` opens the file in `$VISUAL`, `$EDITOR`, or `nvim` as a fallback.
+Mouse click selects a file; scroll wheel moves the diff pane. `enter` opens the file in a tmux popup by default â€” set `popup_editor: false` in config to open in the pane instead.
 
 ## Configuration
 
@@ -61,7 +72,8 @@ Create `~/.config/claude-code-preview/config.json` to customize behavior. All fi
     "peach":    "#fab387"
   },
   "poll_ms": 500,
-  "pane_width": 40
+  "pane_width": 40,
+  "popup_editor": true
 }
 ```
 

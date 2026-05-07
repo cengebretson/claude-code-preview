@@ -41,35 +41,19 @@ func runInstall() error {
 
 	fmt.Println("Installing claude-code-preview...")
 
-	// Write Claude hook scripts
-	for _, name := range []string{"snapshot-file.sh", "track-changes.sh", "diff-popup.sh"} {
-		data, err := embeddedHooks.ReadFile("hooks/" + name)
-		if err != nil {
-			return fmt.Errorf("reading embedded %s: %w", name, err)
-		}
-		dest := filepath.Join(hookDir, name)
-		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-			return err
-		}
-		if err := os.WriteFile(dest, data, 0755); err != nil {
-			return fmt.Errorf("writing %s: %w", dest, err)
-		}
-		fmt.Printf("  ✓ wrote %s\n", dest)
-	}
-
-	// Write preview-open.sh to install dir
-	data, err := embeddedHooks.ReadFile("hooks/preview-open.sh")
+	// Write Claude hook script
+	hookScript := filepath.Join(hookDir, "claude-code-preview.sh")
+	data, err := embeddedHooks.ReadFile("hooks/claude-code-preview.sh")
 	if err != nil {
-		return fmt.Errorf("reading embedded preview-open.sh: %w", err)
+		return fmt.Errorf("reading embedded claude-code-preview.sh: %w", err)
 	}
-	if err := os.MkdirAll(outDir, 0755); err != nil {
+	if err := os.MkdirAll(hookDir, 0755); err != nil {
 		return err
 	}
-	openScript := filepath.Join(outDir, "preview-open.sh")
-	if err := os.WriteFile(openScript, data, 0755); err != nil {
-		return fmt.Errorf("writing preview-open.sh: %w", err)
+	if err := os.WriteFile(hookScript, data, 0755); err != nil {
+		return fmt.Errorf("writing claude-code-preview.sh: %w", err)
 	}
-	fmt.Printf("  ✓ wrote %s\n", openScript)
+	fmt.Printf("  ✓ wrote %s\n", hookScript)
 
 	// Merge settings.json
 	if err := mergeSettings(configDir, hookDir); err != nil {
@@ -78,8 +62,8 @@ func runInstall() error {
 	fmt.Println("  ✓ updated settings.json")
 
 	fmt.Println("\nAdd this to your tmux.conf:")
-	fmt.Printf("\n  bind P run-shell %q\n\n", openScript)
-	fmt.Println("Then reload tmux: prefix+r")
+	fmt.Println("\n  bind P run-shell \"claude-code-preview tmux\"")
+	fmt.Println("\nThen reload tmux: prefix+r")
 
 	return nil
 }
@@ -112,22 +96,23 @@ func mergeSettings(configDir, hookDir string) error {
 		hooks = make(map[string][]json.RawMessage)
 	}
 
+	hook := filepath.Join(hookDir, "claude-code-preview.sh")
 	wantHooks := map[string][]settingsHookEntry{
 		"PreToolUse": {
 			{
 				Matcher: "Edit|Write|NotebookEdit",
-				Hooks:   []settingsHook{{Type: "command", Command: filepath.Join(hookDir, "snapshot-file.sh")}},
+				Hooks:   []settingsHook{{Type: "command", Command: hook}},
 			},
 		},
 		"PostToolUse": {
 			{
 				Matcher: "Edit|Write|NotebookEdit",
-				Hooks:   []settingsHook{{Type: "command", Command: filepath.Join(hookDir, "track-changes.sh")}},
+				Hooks:   []settingsHook{{Type: "command", Command: hook}},
 			},
 		},
 		"Stop": {
 			{
-				Hooks: []settingsHook{{Type: "command", Command: filepath.Join(hookDir, "diff-popup.sh")}},
+				Hooks: []settingsHook{{Type: "command", Command: hook}},
 			},
 		},
 	}

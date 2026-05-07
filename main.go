@@ -29,11 +29,16 @@ func main() {
 		}
 	case "status":
 		runStatus()
+	case "tmux":
+		if err := runTmux(); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
 	case "version", "--version", "-v":
 		fmt.Println(version)
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
-		fmt.Fprintln(os.Stderr, "usage: claude-code-preview [install|uninstall|status|version]")
+		fmt.Fprintln(os.Stderr, "usage: claude-code-preview [install|uninstall|status|tmux|version]")
 		os.Exit(1)
 	}
 }

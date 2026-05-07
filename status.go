@@ -27,7 +27,6 @@ func checkBin(name string) {
 func runStatus() {
 	configDir := claudeConfigDir()
 	hookDir := filepath.Join(configDir, "hooks")
-	outDir := appConfigDir()
 
 	fmt.Println("Dependencies:")
 	checkBin("delta")
@@ -35,10 +34,7 @@ func runStatus() {
 	checkBin("tmux")
 
 	fmt.Println("\nHook scripts:")
-	check("snapshot-file.sh", filepath.Join(hookDir, "snapshot-file.sh"))
-	check("track-changes.sh", filepath.Join(hookDir, "track-changes.sh"))
-	check("diff-popup.sh", filepath.Join(hookDir, "diff-popup.sh"))
-	check("preview-open.sh", filepath.Join(outDir, "preview-open.sh"))
+	check("claude-code-preview.sh", filepath.Join(hookDir, "claude-code-preview.sh"))
 
 	fmt.Println("\nSettings.json hooks:")
 	settingsPath := filepath.Join(configDir, "settings.json")
@@ -61,10 +57,11 @@ func runStatus() {
 	}
 	var hooks map[string][]json.RawMessage
 	json.Unmarshal(raw["hooks"], &hooks)
+	hook := filepath.Join(hookDir, "claude-code-preview.sh")
 	scripts := map[string]string{
-		"PreToolUse":  filepath.Join(hookDir, "snapshot-file.sh"),
-		"PostToolUse": filepath.Join(hookDir, "track-changes.sh"),
-		"Stop":        filepath.Join(hookDir, "diff-popup.sh"),
+		"PreToolUse":  hook,
+		"PostToolUse": hook,
+		"Stop":        hook,
 	}
 	for _, event := range events {
 		cmd := scripts[event]

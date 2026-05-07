@@ -10,22 +10,13 @@ import (
 func runUninstall() error {
 	configDir := claudeConfigDir()
 	hookDir := filepath.Join(configDir, "hooks")
-	outDir := appConfigDir()
 
 	fmt.Println("Uninstalling claude-code-preview...")
 
-	// Remove hook scripts
-	for _, name := range []string{"snapshot-file.sh", "track-changes.sh", "diff-popup.sh"} {
-		path := filepath.Join(hookDir, name)
-		if err := os.Remove(path); err == nil {
-			fmt.Printf("  ✓ removed %s\n", path)
-		}
-	}
-
-	// Remove preview-open.sh (leave config.json intact)
-	openScript := filepath.Join(outDir, "preview-open.sh")
-	if err := os.Remove(openScript); err == nil {
-		fmt.Printf("  ✓ removed %s\n", openScript)
+	// Remove hook script
+	hookScript := filepath.Join(hookDir, "claude-code-preview.sh")
+	if err := os.Remove(hookScript); err == nil {
+		fmt.Printf("  ✓ removed %s\n", hookScript)
 	}
 
 	// Remove hooks from settings.json
@@ -36,7 +27,7 @@ func runUninstall() error {
 	}
 
 	fmt.Println("\nRemove this from your tmux.conf:")
-	fmt.Printf("\n  bind P run-shell %q\n\n", filepath.Join(outDir, "preview-open.sh"))
+	fmt.Println("\n  bind P run-shell \"claude-code-preview tmux\"")
 
 	return nil
 }
@@ -64,9 +55,7 @@ func removeHooksFromSettings(configDir, hookDir string) error {
 	}
 
 	ourCommands := map[string]bool{
-		filepath.Join(hookDir, "snapshot-file.sh"): true,
-		filepath.Join(hookDir, "track-changes.sh"): true,
-		filepath.Join(hookDir, "diff-popup.sh"):    true,
+		filepath.Join(hookDir, "claude-code-preview.sh"): true,
 	}
 
 	for event, entries := range hooks {

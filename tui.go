@@ -324,6 +324,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case filesLoadedMsg:
 		if len(msg.files) > 0 {
+			// Ring the terminal bell so tmux sets window_bell_flag in the status bar.
+			os.Stdout.Write([]byte("\a"))
 			m.files = msg.files
 			m.fileStats = make(map[string][2]int)
 			m.sessionID = msg.sessionID

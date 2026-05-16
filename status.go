@@ -57,15 +57,9 @@ func runStatus() {
 	}
 	var hooks map[string][]json.RawMessage
 	json.Unmarshal(raw["hooks"], &hooks)
-	hook := filepath.Join(hookDir, "claude-code-preview.sh")
-	scripts := map[string]string{
-		"PreToolUse":  hook,
-		"PostToolUse": hook,
-		"Stop":        hook,
-	}
+	hook := hookCommand(configDir)
 	for _, event := range events {
-		cmd := scripts[event]
-		if hookExists(hooks[event], cmd) {
+		if hookExists(hooks[event], hook) {
 			fmt.Printf("  ✓ %s\n", event)
 		} else {
 			fmt.Printf("  ✗ %s — hook not found in settings.json\n", event)

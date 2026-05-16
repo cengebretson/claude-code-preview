@@ -20,7 +20,7 @@ func runUninstall() error {
 	}
 
 	// Remove hooks from settings.json
-	if err := removeHooksFromSettings(configDir, hookDir); err != nil {
+	if err := removeHooksFromSettings(configDir); err != nil {
 		fmt.Printf("  ✗ could not update settings.json: %v\n", err)
 	} else {
 		fmt.Println("  ✓ updated settings.json")
@@ -32,7 +32,7 @@ func runUninstall() error {
 	return nil
 }
 
-func removeHooksFromSettings(configDir, hookDir string) error {
+func removeHooksFromSettings(configDir string) error {
 	settingsPath := filepath.Join(configDir, "settings.json")
 	data, err := os.ReadFile(settingsPath)
 	if err != nil {
@@ -54,9 +54,7 @@ func removeHooksFromSettings(configDir, hookDir string) error {
 		return err
 	}
 
-	ourCommands := map[string]bool{
-		filepath.Join(hookDir, "claude-code-preview.sh"): true,
-	}
+	ourScript := expandTilde(hookCommand(configDir))
 
 	for event, entries := range hooks {
 		var kept []json.RawMessage
@@ -69,7 +67,7 @@ func removeHooksFromSettings(configDir, hookDir string) error {
 			// Keep entries that don't reference our commands
 			hasOurs := false
 			for _, h := range entry.Hooks {
-				if ourCommands[h.Command] {
+				if expandTilde(h.Command) == ourScript {
 					hasOurs = true
 					break
 				}

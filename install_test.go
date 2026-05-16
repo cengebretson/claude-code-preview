@@ -31,10 +31,9 @@ func readSettings(t *testing.T, path string) map[string]json.RawMessage {
 
 func TestMergeSettings_EmptyFile(t *testing.T) {
 	dir := t.TempDir()
-	hookDir := filepath.Join(dir, "hooks")
 	writeTempSettings(t, dir, `{}`)
 
-	if err := mergeSettings(dir, hookDir); err != nil {
+	if err := mergeSettings(dir); err != nil {
 		t.Fatal(err)
 	}
 
@@ -55,12 +54,11 @@ func TestMergeSettings_EmptyFile(t *testing.T) {
 
 func TestMergeSettings_NoDuplicates(t *testing.T) {
 	dir := t.TempDir()
-	hookDir := filepath.Join(dir, "hooks")
 	writeTempSettings(t, dir, `{}`)
 
 	// Run install twice
-	mergeSettings(dir, hookDir)
-	mergeSettings(dir, hookDir)
+	mergeSettings(dir)
+	mergeSettings(dir)
 
 	raw := readSettings(t, filepath.Join(dir, "settings.json"))
 	var hooks map[string][]json.RawMessage
@@ -75,10 +73,9 @@ func TestMergeSettings_NoDuplicates(t *testing.T) {
 
 func TestMergeSettings_PreservesExistingConfig(t *testing.T) {
 	dir := t.TempDir()
-	hookDir := filepath.Join(dir, "hooks")
 	writeTempSettings(t, dir, `{"theme": "dark", "editorMode": "vim"}`)
 
-	if err := mergeSettings(dir, hookDir); err != nil {
+	if err := mergeSettings(dir); err != nil {
 		t.Fatal(err)
 	}
 
@@ -93,14 +90,13 @@ func TestMergeSettings_PreservesExistingConfig(t *testing.T) {
 
 func TestMergeSettings_PreservesExistingHooks(t *testing.T) {
 	dir := t.TempDir()
-	hookDir := filepath.Join(dir, "hooks")
 	writeTempSettings(t, dir, `{
 		"hooks": {
 			"Stop": [{"hooks": [{"type": "command", "command": "/usr/local/bin/my-hook.sh"}]}]
 		}
 	}`)
 
-	if err := mergeSettings(dir, hookDir); err != nil {
+	if err := mergeSettings(dir); err != nil {
 		t.Fatal(err)
 	}
 
@@ -130,12 +126,11 @@ func TestHookExists(t *testing.T) {
 
 func TestRemoveHooksFromSettings(t *testing.T) {
 	dir := t.TempDir()
-	hookDir := filepath.Join(dir, "hooks")
 	writeTempSettings(t, dir, `{}`)
 
 	// Install then uninstall
-	mergeSettings(dir, hookDir)
-	if err := removeHooksFromSettings(dir, hookDir); err != nil {
+	mergeSettings(dir)
+	if err := removeHooksFromSettings(dir); err != nil {
 		t.Fatal(err)
 	}
 
@@ -153,15 +148,14 @@ func TestRemoveHooksFromSettings(t *testing.T) {
 
 func TestRemoveHooksFromSettings_PreservesOtherHooks(t *testing.T) {
 	dir := t.TempDir()
-	hookDir := filepath.Join(dir, "hooks")
 	writeTempSettings(t, dir, `{
 		"hooks": {
 			"Stop": [{"hooks": [{"type": "command", "command": "/usr/local/bin/my-hook.sh"}]}]
 		}
 	}`)
 
-	mergeSettings(dir, hookDir)
-	removeHooksFromSettings(dir, hookDir)
+	mergeSettings(dir)
+	removeHooksFromSettings(dir)
 
 	raw := readSettings(t, filepath.Join(dir, "settings.json"))
 	var hooks map[string][]json.RawMessage

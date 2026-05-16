@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 //go:embed hooks/*
@@ -21,17 +22,32 @@ type settingsHookEntry struct {
 	Hooks   []settingsHook `json:"hooks"`
 }
 
-type settings struct {
-	Hooks map[string][]settingsHookEntry `json:"hooks,omitempty"`
-	Extra map[string]json.RawMessage     `json:"-"`
-}
-
 func claudeConfigDir() string {
 	if d := os.Getenv("CLAUDE_CONFIG_DIR"); d != "" {
 		return d
 	}
 	home, _ := os.UserHomeDir()
 	return filepath.Join(home, ".claude")
+}
+
+// hookCommand returns the command path to write into settings.json.
+// Uses ~ for the default location so the path is portable across machines.
+func hookCommand(configDir string) string {
+	home, _ := os.UserHomeDir()
+	hookPath := filepath.Join(configDir, "hooks", "claude-code-preview.sh")
+	if home != "" && strings.HasPrefix(hookPath, home+"/") {
+		return "~" + hookPath[len(home):]
+	}
+	return hookPath
+}
+
+// expandTilde replaces a leading ~ with the real home directory.
+func expandTilde(path string) string {
+	if !strings.HasPrefix(path, "~/") {
+		return path
+	}
+	home, _ := os.UserHomeDir()
+	return home + path[1:]
 }
 
 func runInstall() error {
@@ -55,7 +71,7 @@ func runInstall() error {
 	fmt.Printf("  ✓ wrote %s\n", hookScript)
 
 	// Merge settings.json
-	if err := mergeSettings(configDir, hookDir); err != nil {
+	if err := mergeSettings(configDir); err != nil {
 		return fmt.Errorf("updating settings.json: %w", err)
 	}
 	fmt.Println("  ✓ updated settings.json")
@@ -67,7 +83,7 @@ func runInstall() error {
 	return nil
 }
 
-func mergeSettings(configDir, hookDir string) error {
+func mergeSettings(configDir string) error {
 	settingsPath := filepath.Join(configDir, "settings.json")
 
 	var raw map[string]json.RawMessage
@@ -84,7 +100,6 @@ func mergeSettings(configDir, hookDir string) error {
 		raw = make(map[string]json.RawMessage)
 	}
 
-	// Parse existing hooks
 	var hooks map[string][]json.RawMessage
 	if h, ok := raw["hooks"]; ok {
 		if err := json.Unmarshal(h, &hooks); err != nil {
@@ -95,7 +110,7 @@ func mergeSettings(configDir, hookDir string) error {
 		hooks = make(map[string][]json.RawMessage)
 	}
 
-	hook := filepath.Join(hookDir, "claude-code-preview.sh")
+	hook := hookCommand(configDir)
 	wantHooks := map[string][]settingsHookEntry{
 		"PreToolUse": {
 			{
@@ -139,13 +154,14 @@ func mergeSettings(configDir, hookDir string) error {
 }
 
 func hookExists(entries []json.RawMessage, command string) bool {
+	want := expandTilde(command)
 	for _, raw := range entries {
 		var entry settingsHookEntry
 		if err := json.Unmarshal(raw, &entry); err != nil {
 			continue
 		}
 		for _, h := range entry.Hooks {
-			if h.Command == command {
+			if expandTilde(h.Command) == want {
 				return true
 			}
 		}
